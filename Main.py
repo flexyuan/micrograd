@@ -12,7 +12,7 @@ def main():
     ]
     ys = [1.0, -1.0, -1.0, 1.0]  # desired targets
 
-    for k in range(20):
+    for k in range(30):
         # forward pass
         ypred = [n(x) for x in xs]
         loss = sum((yout - ygt) ** 2 for ygt, yout in zip(ys, ypred))

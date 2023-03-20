@@ -57,26 +57,33 @@ class Value:
         return self * other
 
     def sigmoid(self):
-        d = 1 / (1 + exp(self.data))
-        v = Value(d, [self], "sigmoid")
+        x = self.data
+        t = (exp(2 * x) - 1) / (exp(2 * x) + 1)
+        out = Value(t, [self], "tanh")
 
-        def backward():
-            self.grad += v.grad * (1 - d) * d
+        def _backward():
+            self.grad += (1 - t**2) * out.grad
 
-        v._backward = backward
-        return v
+        out._backward = _backward
+
+        return out
 
     def backward(self):
         topo = []
-        q: list[Value] = [self]
-        while len(q) != 0:
-            v = q.pop(0)
-            topo.append(v)
-            q.extend(v._children)
-        self.grad = 1.0
-        for p in topo:
-            p._backward()
+        visited = set()
 
+        def build_topo(v):
+            if v not in visited:
+                visited.add(v)
+                for child in v._children:
+                    build_topo(child)
+                topo.append(v)
+
+        build_topo(self)
+
+        self.grad = 1.0
+        for node in reversed(topo):
+            node._backward()
 
     def __repr__(self):
         return f"Value(data={self.data}, grad={self.grad})"
