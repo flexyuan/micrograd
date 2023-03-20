@@ -22,11 +22,11 @@ def main():
             p.grad = 0.0
         loss.backward()
 
-    # update
-    for p in n.parameters():
-        p.data += -0.1 * p.grad
+        # update
+        for p in n.parameters():
+            p.data += -0.1 * p.grad
 
-    print(k, loss.data)
+        print(k, loss.data)
 
 
 if __name__ == "__main__":

@@ -7,8 +7,7 @@ class Value:
         self.data = data
         self._children = _children
         self._op = _op
-        self._backprop = None
-        self._backward = None
+        self._backward = lambda: None
 
     def __add__(self, other):
         other = other if isinstance(other, Value) else Value(other)
@@ -26,11 +25,23 @@ class Value:
         return self + other
 
     def _neg__(self):
-        return Value(
-            -self.data,
-        )
+        return self * -1
 
-    def __mult__(self, other):
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __pow__(self, other):
+        assert isinstance(other, (int, float))
+        children = [self]
+        out = Value(self.data**other, children, "pow")
+
+        def _backward():
+            self.grad += other * (self.data ** (other - 1)) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def __mul__(self, other):
         other = other if isinstance(other, Value) else Value(other)
         children = [self, other]
         out = Value(self.data * other.data, children, "*")
@@ -42,12 +53,8 @@ class Value:
         out._backward = _backward
         return out
 
-    def __rmult__(self, other):
+    def __rmul__(self, other):
         return self * other
-
-    def backprop(self):
-        for c in self._children:
-            c.backprop()
 
     def sigmoid(self):
         d = 1 / (1 + exp(self.data))
@@ -57,7 +64,19 @@ class Value:
             self.grad += v.grad * (1 - d) * d
 
         v._backward = backward
-        return
+        return v
+
+    def backward(self):
+        topo = []
+        q: list[Value] = [self]
+        while len(q) != 0:
+            v = q.pop(0)
+            topo.append(v)
+            q.extend(v._children)
+        self.grad = 1.0
+        for p in topo:
+            p._backward()
+
 
     def __repr__(self):
         return f"Value(data={self.data}, grad={self.grad})"

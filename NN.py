@@ -3,7 +3,6 @@ import random
 
 
 class Neuron:
-
     def __init__(self, nin) -> None:
         self.w = [Value(random.uniform(-1, 1)) for _ in range(nin)]
         self.b = Value(random.uniform(-1, 1))
@@ -11,7 +10,7 @@ class Neuron:
     def __call__(self, x) -> None:
         z = sum((x1 * w1 for x1, w1 in zip(x, self.w)), self.b)
         return z.sigmoid()
-    
+
     def parameters(self):
         r = [i for i in self.w]
         r.append(self.b)
@@ -22,10 +21,16 @@ class Layer:
     def __init__(self, nin, nout) -> None:
         self.nin = nin
         self.nout = nout
-        self.neurons: list[Neuron] = [Neuron() for i in range(nout)]
+        self.neurons: list[Neuron] = [Neuron(nin) for _ in range(nout)]
 
     def __call__(self, x):
         return [l(x) for l in self.neurons]
+    
+    def parameters(self):
+        result = []
+        for n in self.neurons:
+            result.extend(n.parameters())
+        return result
 
 
 class MLP:
@@ -36,9 +41,10 @@ class MLP:
     def __call__(self, x):
         for l in self.layers:
             x = l(x)
-        return x
+        return x[0] if len(x) == 1 else x
 
     def parameters(self):
         result = []
-        for i in self.neurons:
+        for i in self.layers:
             result.extend(i.parameters())
+        return result
